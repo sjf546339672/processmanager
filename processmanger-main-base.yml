@@ -1,0 +1,102 @@
+# 自定义业务配置项
+biz:
+  app:
+    # 应用编码（全大写、首字母大写或带数字，如：CMDB、Automation、APP360、VideoMon）
+    code: Processmanger
+    lower-code: processmanger
+    # 英文描述信息
+    description: demo app
+    # 中文描述信息
+    descriptionCn: 基于 Python 和 Django 的示例程序
+    auth-codes:
+    security:
+      # 是否跳过openApi apikey效验, third-consumer-spring-boot-starter ,own-consumer-spring-boot-starter 都会生效
+      enabled: false
+      # 提供访问apikey 供sdk调用租户openApi使用,使用third-consumer-spring-boot-starter 产品权限注册组件需要提供，该组件使用openApi方式进行权限，
+      # 产品信息注册，顾需要提供apikey, 应用本身提供给外部调用无需提供apiKey.
+      api-key: e10adc3949ba59abbe56e057f2gg88dd
+      # 需要验证登录的地址
+      validation-path: /processmanger/frontapi/v1/**
+      #不需要验证登录地址
+      ineffectiveness-path: /, /static/**, /tenant/**, /frontend/**, /actuator/**, /h2/**, /health_check, /favicon.ico, /processmanger/serviceapi/v1/**
+
+  module:
+    # 模块编码（全部小写，单模块应用为 应用编码小写-main ）
+    code: processmanger-main
+    # 模块中文名称
+    name: processmanger
+    description: Processmanger主模块
+    main-class: python
+    # 版本信息（以“.”分割四位数字组成）
+    version: 2.0.16.0
+    # 当前支持 [main, compute, normal] 三个枚举值
+    # main：产品主模块，运维管理平台将以此模块作为安装切点进行依赖分析并完成所在产品的安装，每个产品只有一个main模块，一般为nginx或web前端
+    # compute：计算模块
+    # normal：常规模块
+    # 单模块默认为 main
+    type: main
+    # 是否支持扩容，默认为true（可选）
+    scalable: true
+    # 是否需要Platform Nginx进行方向代理或负载均衡，
+    # 可选项，如果需要进行代理，请按如下方式进行配置。
+    enable_reverse_proxy:
+      upstream: |
+        upstream processmanger {
+        <#list hosts as host>
+          # 在此处追加对应Server配置，修改API接口
+          server ${host.ip}:${server.port};
+        </#list>
+          check interval=3000 rise=2 fall=3 timeout=3000;
+        }
+        upstream processmanger-api {
+        <#list hosts as host>
+          # 在此处追加对应Server配置，修改API接口
+          server ${host.ip}:${server.port};
+        </#list>
+        }
+      location: |
+        location /processmanger/ {
+          proxy_pass http://processmanger/;
+        }
+        location /processmanger/frontapi/v1 {
+          proxy_pass http://processmanger-api;
+        }
+        location /processmanger/openapi/v1 {
+          proxy_pass http://processmanger-api;
+        }
+        location /processmanger/serviceapi/v1 {
+          proxy_pass http://processmanger-api;
+        }
+    # 需要关闭的防火墙端口
+    firewall_port: ${server.port}
+    # 数据库账户
+    database:
+      account:
+        - type: mysql
+          schema: processmanger
+          username: processmanger
+    # 依赖信息，该应用依赖的其他模块，包括DB、中间件等（可为空）
+    dependencies:
+      - module: platform-mysql
+        version: 2.0.0.0
+      - module: platform-apollo-adminservice
+        version: 2.0.0.0
+      - module: platform-apollo-portal
+        version: 2.0.0.0
+      - module: platform-apollo-configservice
+        version: 2.0.0.0
+      - module: platform-tenant
+        version: 2.0.16.10
+      - module: devcenter-python3
+        version: 2.0.0.1
+    # 追加docker相关参数配置声明
+    docker:
+      deployment:
+        # 镜像类型：java|python|node|all
+        img: python
+        # 默认为 deployment，如果部署过程是有状态，如启动时需初始化数据、leader选举等请配置为 statefulset
+        kind: deployment
+        # 容器部署后是否允许扩缩容处理
+        scalable: true
+server:
+  port: 9770

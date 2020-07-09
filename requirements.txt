@@ -1,0 +1,15 @@
+Django==3.0
+PyMySQL==0.9.3
+djangorestframework==3.10.3
+drf-yasg==1.17.0
+pytest==3.6.4
+pytest-django==3.7.0
+requests==2.22.0
+whitenoise
+pyyaml
+
+
+
+java -jar modules\swagger-codegen-cli\target\swagger-codegen-cli.jar generate -i http://127.0.0.1:9005/swagger.json -l javascript -o user-demo2
+java -jar swagger-codegen-cli.jar generate -i http://127.0.0.1:9005/swagger.json -l javascript -o user-demo2
+
